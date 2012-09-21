@@ -1,1 +1,1 @@
-objs-y += rclink.o
+subdirs-y += lib-rc

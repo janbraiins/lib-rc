@@ -1,0 +1,10 @@
+# A sample configuration of the lib-rc
+
+# location of the library sources
+CONFIG_LIB_RC_DIR ../../lib-rc
+
+# maximum number of supported servo channels
+CONFIG_LIB_RC_RC_CHANNELS_MAX_COUNT 12
+
+# support for multiplex transmitters
+CONFIG_LIB_RC_MULTIPLEX n
