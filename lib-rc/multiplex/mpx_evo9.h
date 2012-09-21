@@ -202,7 +202,7 @@ int mpx_evo9__read(struct mpx_evo9 *self, struct rc_channels *channels);
 
 
 /**
- * Resets the frame drop count
+ * Resets the frame drop count.
  *
  * @memberof mpx_evo9
  * @param *self - this royal evo instance
@@ -212,5 +212,17 @@ static inline void mpx_evo9__reset_drop_count(struct mpx_evo9 *self)
   self->drop_count = 0;
 }
 
+
+/**
+ * Drop count accessor.
+ *
+ * @memberof mpx_evo9
+ * @param *self - this royal evo instance
+ * @return current drop count value
+ */
+static inline unsigned long mpx_evo9__get_drop_count(struct mpx_evo9 *self)
+{
+  return self->drop_count;
+}
 
 #endif /* _LIB_RC_MULTIPLEX_MPX_EVO9_H_ */
