@@ -67,6 +67,8 @@ struct mpx_evo9__channel_info {
  * @memberof mpx_evo9
  * @private
  * @param *self - this royal evo instance
+ *
+ * @return E_OK upon success
  */
 static int mpx_evo9__do_rf_handshake(struct mpx_evo9 *self)
 {
