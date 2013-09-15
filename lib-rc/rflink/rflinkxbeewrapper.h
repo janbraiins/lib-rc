@@ -36,7 +36,7 @@ private:
   AtCommandRequest at_command_request;
 
 public:
-  /** 
+  /**
    * Fetches the current status response from the XBee stack and
    * provides the cached instance to the user
    *
@@ -48,7 +48,7 @@ public:
     return modem_status_response;
   }
 
-  /** 
+  /**
    * Fetches the current AT command response from the XBee stack and
    * provides the cached instance to the user
    *
@@ -61,7 +61,7 @@ public:
   }
 
 
-  /** 
+  /**
    * Fetches the current ZigBee Tx status response from the XBee stack and
    * provides the cached instance to the user
    *
@@ -73,7 +73,7 @@ public:
     return zb_tx_status_response;
   }
 
-  /** 
+  /**
    * Fetches the current ZigBee Rx response from the XBee stack and
    * provides the cached instance to the user
    *

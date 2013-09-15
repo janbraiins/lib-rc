@@ -2,7 +2,9 @@
  * @file rclink.cpp
  * @brief Full duplex XBee RC link between transmitter and receiver
  */
-#include <rclink.hpp>
+#include <lib-rc/rflink/rflink.hpp>
+
+#include <lib-rtos/time.h>
 
 /* XBee wrapper*/
 #include "rclinkxbeewrapper.h"
@@ -16,61 +18,76 @@
 
 
 /**
- * \<\<private\>\> Access for the RCLinkXBeeWrapper instance
+ * Access for the RCLinkXBeeWrapper instance
  *
+ * @private
+ * @memberof rflink
  * @param *self - this RC link instance
  *
  * @return pointer to the RCLinkXBeeWrapper instance
  */
-static inline RCLinkXBeeWrapper* rclink_get_xbee_wrapper(struct rclink *self)
+static inline RCLinkXBeeWrapper* rflink__get_xbee_wrapper(struct rflink *self)
 {
   return (RCLinkXBeeWrapper*)(self->xbee);
 }
 
 
 /**
- * \<\<private\>\> Locks the associated XBee device
+ * Locks the associated XBee device
  *
+ * @private
+ * @memberof rflink
  * @param *self - this RC link instance
  */
-static inline void rclink_lock_xbee(struct rclink *self)
+static inline void rflink__lock_xbee(struct rflink *self)
 {
   xSemaphoreTake(self->xbee_lock, portMAX_DELAY);
 }
 
+
 /**
- * \<\<private\>\> Unlocks the associated XBee device
+ * Unlocks the associated XBee device
  *
+ * @private
+ * @memberof rflink
  * @param *self - this RC link instance
  */
-static inline void rclink_unlock_xbee(struct rclink *self)
+static inline void rflink__unlock_xbee(struct rflink *self)
 {
   xSemaphoreGive(self->xbee_lock);
 }
 
 
 /**
- * \<\<private\>\> Sends an AT command with an optional data payload
+ * Sends an AT command with an optional data payload
  *
+ * @private
+ * @memberof rflink
  * @param *self - this RC link instance
+ * @param at_command - pointer to the AT command being sent (2 bytes expected)
+ * @param at_command_data - data associated with the AT command
+ * @param at_command_data_length - length of the data for the AT
+ * command
  */
-static void rclink_send_at_command(struct rclink *self,
-				   const uint8_t at_command[],
-				   const uint8_t at_command_data[],
-				   uint8_t at_command_data_length)
+static void rflink__send_at_command(struct rflink *self,
+				    const uint8_t at_command[],
+				    const uint8_t at_command_data[],
+				    uint8_t at_command_data_length)
 {
-  RCLinkXBeeWrapper *xbee_wrapper = rclink_get_xbee_wrapper(self);
+  RCLinkXBeeWrapper *xbee_wrapper = rflink__get_xbee_wrapper(self);
 
-  rclink_lock_xbee(self);
+  rflink__lock_xbee(self);
   xbee_wrapper->submitAtCommandRequest(at_command, at_command_data,
 				       at_command_data_length);
-  rclink_unlock_xbee(self);
+  rflink__unlock_xbee(self);
 }
 
 
 /**
- * \<\<private\>\> Waits for an AT command response.
+ * Waits for an AT command response.
  *
+ * @private
+ * @memberof rflink
  * @param *self - this RC link instance
  * @param *response - stores the resulting response
  * @param expected_at_cmd - the AT command that is expected in the
@@ -78,30 +95,30 @@ static void rclink_send_at_command(struct rclink *self,
  * @param timeout - maximum time to wait for the response in OS
  * ticks. portMAX_DELAY waits infinitely.
  *
- * @return RCLINK_SUCCESS - if a proper response has arrived and
+ * @return RFLINK__SUCCESS - if a proper response has arrived and
  * indicates no error
  */
-static int rclink_recv_at_command_response(struct rclink *self,
-					   struct at_command_response *response,
-					   const uint8_t expected_at_cmd[],
-					   portTickType timeout)
+static int rflink__recv_at_command_response(struct rflink *self,
+					    struct at_command_response *response,
+					    const uint8_t expected_at_cmd[],
+					    portTickType timeout)
 {
-  int err = RCLINK_SUCCESS;
+  int err = RFLINK__SUCCESS;
 
   /* fetch the AT response */
   if (xQueueReceive(self->at_command_response_queue, response,
 		    timeout) != pdPASS) {
-    err = RCLINK_AT_COMMAND_RESPONSE_TIMEOUT;
+    err = RFLINK__AT_COMMAND_RESPONSE_TIMEOUT;
     goto receive_failed;
   }
   /* ensure that the received response is for the desired command */
   if (response->command[0] != expected_at_cmd[0] ||
       response->command[1] != expected_at_cmd[1]) {
-    err = RCLINK_UNEXPECTED_AT_COMMAND;
+    err = RFLINK__UNEXPECTED_AT_COMMAND;
     goto receive_failed;
   }
   if (response->status != AT_OK) {
-    err = RCLINK_AT_COMMAND_FAILED;
+    err = RFLINK__AT_COMMAND_FAILED;
     goto receive_failed;
   }
 
@@ -111,23 +128,28 @@ static int rclink_recv_at_command_response(struct rclink *self,
 
 
 /**
- * \<\<private\>\> Common part of the link initialization
+ * Common part of the link initialization
  *
  * The initialization performs network reset, so that a new channel is
  * selected (in case of coordinator) or the router attaches to the new
  * network
  *
+ * @private
+ * @memberof rflink
  * @param *self - this RC link instance
  *
- * @return RCLINK_SUCCESS if it has been successfully initialized
+ * @return RFLINK__SUCCESS if it has been successfully initialized
  */
-static void rclink_reset_xbee(self)
+static void rflink__reset_xbee(self)
 {
-  RCLinkXBeeWrapper *xbee_wrapper = rclink_get_xbee_wrapper(self);
+  RCLinkXBeeWrapper *xbee_wrapper = rflink__get_xbee_wrapper(self);
 
 
-  rclink_lock_xbee(self);
-  gpio_port_
+  rflink__lock_xbee(self);
+  /* assert reset for 10 ms */
+  gpio_pin__wr(self->reset_gpio, 0);
+  vTaskDelay(TIME__MS_TO_OS_TICKS(choose_some_delay);
+  gpio_pin__wr(self->reset_gpio, 1);
   xbee_wrapper->getXBee().
   xbee_wrapper->submitZBTxRequest(buf, len);
 
@@ -136,7 +158,7 @@ static void rclink_reset_xbee(self)
   self->tx_status_drop_count = 0;
   self->at_command_response_drop_count = 0;
 
-  rclink_unlock_xbee(self);
+  rflink__unlock_xbee(self);
 
   xbee_lock
 
@@ -153,33 +175,33 @@ static void rclink_reset_xbee(self)
  *
  * @param *self - this RC link instance
  *
- * @return RCLINK_SUCCESS if it has been successfully initialized
+ * @return RFLINK__SUCCESS if it has been successfully initialized
  */
-static int rclink_init(struct rclink *self)
+static int rflink__init(struct rflink *self)
 {
-  int err = RCLINK_SUCCESS;
+  int err = RFLINK__SUCCESS;
   struct at_command_response response;
   uint8_t at_cmd[] = {'N', 'R'};
 
-  rclink_reset_xbee(self);
+  rflink__reset_xbee(self);
 
-  rclink_send_at_command(self, at_cmd, NULL, 0);
-  rclink_handle_rx_frame(self);
-  err = rclink_recv_at_command_response(self, &response, at_cmd,
+  rflink__send_at_command(self, at_cmd, NULL, 0);
+  rflink__handle_rx_frame(self);
+  err = rflink__recv_at_command_response(self, &response, at_cmd,
 					NETWORK_RESET_TIMEOUT);
 
-  if (err != RCLINK_SUCCESS)
+  if (err != RFLINK__SUCCESS)
     goto init_failed;
 
-  rclink_handle_rx_frame(self);
+  rflink__handle_rx_frame(self);
   if (self->modem_status != DISASSOCIATED) {
-    err = RCLINK_UNEXPECTED_MODEM_STATUS;
+    err = RFLINK__UNEXPECTED_MODEM_STATUS;
     goto init_failed;
   }
 
-  rclink_handle_rx_frame(self);
+  rflink__handle_rx_frame(self);
   if (self->modem_status != COORDINATOR_STARTED) {
-    err = RCLINK_UNEXPECTED_MODEM_STATUS;
+    err = RFLINK__UNEXPECTED_MODEM_STATUS;
     goto init_failed;
   }
 
@@ -200,15 +222,15 @@ static int rclink_init(struct rclink *self)
  * ticks. portMAX_DELAY waits infinitely.
 
  */
-static inline int rclink_recv_zb_rx_response(struct rclink *self,
+static inline int rflink__recv_zb_rx_response(struct rflink *self,
 					     struct zb_rx_response *response,
 					     portTickType timeout)
 {
-  int err = RCLINK_SUCCESS;
+  int err = RFLINK__SUCCESS;
   /* fetch the Rx response */
   if (xQueueReceive(self->rx_payload_queue, response,
 		    timeout) != pdPASS)
-    err = RCLINK_RX_TIMEOUT;
+    err = RFLINK__RX_TIMEOUT;
 
   return err;
 }
@@ -224,13 +246,13 @@ static inline int rclink_recv_zb_rx_response(struct rclink *self,
  *
  * @param *self - this RC link instance
  */
-static void rclink_handle_rx_at_command_response(struct rclink *self)
+static void rflink__handle_rx_at_command_response(struct rflink *self)
 {
-  RCLinkXBeeWrapper *xbee_wrapper = rclink_get_xbee_wrapper(self);
+  RCLinkXBeeWrapper *xbee_wrapper = rflink__get_xbee_wrapper(self);
   AtCommandResponse &at_command_response =
     xbee_wrapper->getAtCommandResponse();
   /* response that will be sent down the queue */
-  struct at_command_response response;
+  struct rflink__at_command_response response;
   size_t data_length;
 
   response.frame_id = at_command_response.getFrameId();
@@ -267,9 +289,9 @@ static void rclink_handle_rx_at_command_response(struct rclink *self)
  *
  * @param *self - this RC link instance
  */
-static void rclink_handle_rx_zb_rx_response(struct rclink *self)
+static void rflink__handle_rx_zb_rx_response(struct rflink *self)
 {
-  RCLinkXBeeWrapper *xbee_wrapper = rclink_get_xbee_wrapper(self);
+  RCLinkXBeeWrapper *xbee_wrapper = rflink__get_xbee_wrapper(self);
   ZBRxResponse &zb_rx_response =
     xbee_wrapper->getZBRxResponse();
   /* response that will be sent down the queue */
@@ -284,9 +306,9 @@ static void rclink_handle_rx_zb_rx_response(struct rclink *self)
   data_length = zb_rx_response.getDataLength();
   /* flag the payload as too large and truncate the data length if
    * necessary */
-  if (data_length > CONFIG_LIBRCLINK_RX_MAX_PAYLOAD) {
+  if (data_length > CONFIG_LIBRFLINK__RX_MAX_PAYLOAD) {
     response.receive_options |= ZB_RX_RESPONSE_PAYLOAD_TOO_LARGE;
-    data_length = CONFIG_LIBRCLINK_RX_MAX_PAYLOAD;
+    data_length = CONFIG_LIBRFLINK__RX_MAX_PAYLOAD;
   }
   if (data_length != 0)
     memcpy(response.data, zb_rx_response.getFrameData() +
@@ -309,9 +331,9 @@ static void rclink_handle_rx_zb_rx_response(struct rclink *self)
  *
  * @param *self - this RC link instance
  */
-static void rclink_handle_rx_zb_tx_status_response(struct rclink *self)
+static void rflink__handle_rx_zb_tx_status_response(struct rflink *self)
 {
-  RCLinkXBeeWrapper *xbee_wrapper = rclink_get_xbee_wrapper(self);
+  RCLinkXBeeWrapper *xbee_wrapper = rflink__get_xbee_wrapper(self);
   ZBTxStatusResponse &zb_tx_status_response =
     xbee_wrapper->getZBTxStatusResponse();
   uint8_t delivery_status = zb_tx_status_response.getDeliveryStatus();
@@ -323,9 +345,10 @@ static void rclink_handle_rx_zb_tx_status_response(struct rclink *self)
 }
 
 
- struct rclink* rclink_new(struct uart *xbee_uart, )
+ struct rclink* rflink__new(struct uart *xbee_uart,
+			   const struct platform_gpio_config *rf_en_gpio_cfg)
 {
-  struct rclink *self;
+  struct rflink *self;
   RCLinkXBeeWrapper *xbee_wrapper;
 
   self = (struct rclink*)pvPortMalloc(sizeof(struct rclink));
@@ -357,7 +380,7 @@ static void rclink_handle_rx_zb_tx_status_response(struct rclink *self)
 						 sizeof(struct at_command_response));
 
   gpio_port_initXXXXX(reset_gpio_config);
-  rclink_reset_xbee(self);
+  rflink__reset_xbee(self);
 
   return self;
 
@@ -369,30 +392,30 @@ static void rclink_handle_rx_zb_tx_status_response(struct rclink *self)
 }
 
 
-int rclink_init_transmitter(struct rclink *self)
+int rflink__init_transmitter(struct rflink *self)
 {
   int err;
   struct zb_rx_response response;
-  RCLinkXBeeWrapper *xbee_wrapper = rclink_get_xbee_wrapper(self);
+  RCLinkXBeeWrapper *xbee_wrapper = rflink__get_xbee_wrapper(self);
   /* map the payload onto the receiver ID message */
-  struct rclink_receiver_id *rx_id = (struct rclink_receiver_id*)response.data;
+  struct rflink__receiver_id *rx_id = (struct rflink__receiver_id*)response.data;
 
   /* generic initialization */
-  if ((err = rclink_init(self)) != RCLINK_SUCCESS)
+  if ((err = rflink__init(self)) != RFLINK__SUCCESS)
     goto init_failed;
 
   /* wait for the connecting router ID frame */
-  rclink_handle_rx_frame(self);
-  
+  rflink__handle_rx_frame(self);
+
   /* fetch the Rx response and detect the receiver frame. */
-  rclink_recv_zb_rx_response(self, &response, INIT_TIMEOUT);
-  if (response.data_length != sizeof(struct rclink_receiver_id)) {
-    err = RCLINK_TRANSMITTER_INIT_FAILED;
+  rflink__recv_zb_rx_response(self, &response, INIT_TIMEOUT);
+  if (response.data_length != sizeof(struct rflink__receiver_id)) {
+    err = RFLINK__TRANSMITTER_INIT_FAILED;
     goto init_failed;
   }
 
   if (rx_id->id != RX_ID) {
-    err = RCLINK_TRANSMITTER_INIT_FAILED;
+    err = RFLINK__TRANSMITTER_INIT_FAILED;
     goto init_failed;
   }
 
@@ -405,56 +428,56 @@ int rclink_init_transmitter(struct rclink *self)
 }
 
 
-int rclink_get_rssi(struct rclink *self, int *rssi)
+int rflink__get_rssi(struct rflink *self, int *rssi)
 {
   int err;
   uint8_t at_cmd[] = {'D', 'B'};
   struct at_command_response response;
 
-  rclink_send_at_command(self, at_cmd, NULL, 0);
-  err = rclink_recv_at_command_response(self, &response, at_cmd,
+  rflink__send_at_command(self, at_cmd, NULL, 0);
+  err = rflink__recv_at_command_response(self, &response, at_cmd,
 					AT_COMMAND_TIMEOUT);
 
-  if (err == RCLINK_SUCCESS) {
+  if (err == RFLINK__SUCCESS) {
     *rssi = -1 * (int)response.data[0];
   }
   return err;
 }
 
 
-int rclink_get_channel(struct rclink *self, int *channel)
+int rflink___get_channel(struct rflink *self, int *channel)
 {
   int err;
   uint8_t at_cmd[] = {'C', 'H'};
   struct at_command_response response;
 
-  rclink_send_at_command(self, at_cmd, NULL, 0);
-  err = rclink_recv_at_command_response(self, &response, at_cmd,
+  rflink__send_at_command(self, at_cmd, NULL, 0);
+  err = rflink__recv_at_command_response(self, &response, at_cmd,
 					AT_COMMAND_TIMEOUT);
 
-  if (err == RCLINK_SUCCESS) {
+  if (err == RFLINK__SUCCESS) {
     *channel = (int)response.data[0];
   }
   return err;
 }
 
 
-void rclink_handle_rx_frame(struct rclink *self)
+void rflink___handle_rx_frame(struct rflink *self)
 {
-  RCLinkXBeeWrapper *xbee_wrapper = rclink_get_xbee_wrapper(self);
+  RCLinkXBeeWrapper *xbee_wrapper = rflink___get_xbee_wrapper(self);
   XBee &xbee = xbee_wrapper->getXBee();
 
   xbee.readPacket();
 
   switch (xbee.getResponse().getApiId()) {
   case AT_COMMAND_RESPONSE:
-    rclink_handle_rx_at_command_response(self);
+    rflink__handle_rx_at_command_response(self);
     break;
   case ZB_TX_STATUS_RESPONSE:
-    rclink_handle_rx_zb_tx_status_response(self);
+    rflink__handle_rx_zb_tx_status_response(self);
     break;
   case ZB_RX_RESPONSE:
-    rclink_handle_rx_zb_rx_response(self);
+    rflink__handle_rx_zb_rx_response(self);
     break;
   case MODEM_STATUS_RESPONSE:
     /* there is no queuing of the modem status, we can handle it
@@ -467,32 +490,32 @@ void rclink_handle_rx_frame(struct rclink *self)
 }
 
 
-int rclink_recv(struct rclink *self, void *buf,
-		portTickType timeout)
+int rflink__recv(struct rflink *self, void *buf,
+		 portTickType timeout)
 {
   int err;
 
-  err = rclink_recv_zb_rx_response(self, (struct zb_rx_response*)buf,
+  err = rflink__recv_zb_rx_response(self, (struct zb_rx_response*)buf,
 				   timeout);
   return err;
 }
 
 
-int rclink_send(struct rclink *self, const void *buf, size_t len,
-		portTickType timeout, uint8_t *delivery_status)
+int rflink__send(struct rflink *self, const void *buf, size_t len,
+		 portTickType timeout, uint8_t *delivery_status)
 {
-  int err = RCLINK_SUCCESS;
-  RCLinkXBeeWrapper *xbee_wrapper = rclink_get_xbee_wrapper(self);
+  int err = RFLINK__SUCCESS;
+  RCLinkXBeeWrapper *xbee_wrapper = rflink__get_xbee_wrapper(self);
   uint8_t ret_delivery_status;
 
-  rclink_lock_xbee(self);
+  rflink__lock_xbee(self);
   xbee_wrapper->submitZBTxRequest(buf, len);
-  rclink_unlock_xbee(self);
+  rflink__unlock_xbee(self);
 
   /* fetch the Tx status */
   if (xQueueReceive(self->tx_status_queue, &ret_delivery_status,
 		    timeout) != pdPASS)
-    err = RCLINK_TX_TIMEOUT;
+    err = RFLINK__TX_TIMEOUT;
 
 
   if (delivery_status != NULL)
@@ -501,7 +524,7 @@ int rclink_send(struct rclink *self, const void *buf, size_t len,
   /* anything else than SUCCESS delivery status (see XBee.h - TX
    * STATUS constants) indicates transmission failure */
   if (ret_delivery_status != SUCCESS)
-    err = RCLINK_TX_DELIVERY_FAILED;
+    err = RFLINK__TX_DELIVERY_FAILED;
 
   return err;
 }

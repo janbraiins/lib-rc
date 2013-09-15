@@ -1,10 +1,13 @@
 /**
- * @file rclink.h
- * @brief Full duplex XBee RC link between transmitter and receiver - declaration
+ * @file rflink.h
+ * @brief Full duplex XBee radio link between transmitter and receiver.
  */
-
-#ifndef _RCLINK_H_
-#define _RCLINK_H_
+/**
+ * @defgroup group_rflink Full duplex XBee RF link
+ * @brief XBee RF link namespace
+ */
+#ifndef _LIB_RC_RFLINK_RFLINK_H_
+#define _LIB_RC_RFLINK_RFLINK_H_
 
 /* FreeRTOS includes */
 #include <FreeRTOS.h>
@@ -16,44 +19,52 @@
 
 #include <stdint.h>
 
+/**
+ * @ingroup group_rflink
+ */
 typedef enum {
-  RCLINK_SUCCESS = 0,
-  RCLINK_UNEXPECTED_MODEM_STATUS,
-  RCLINK_NETWORK_RESET_FAILED,
-  RCLINK_AT_COMMAND_RESPONSE_TIMEOUT,
-  RCLINK_UNEXPECTED_AT_COMMAND,
-  RCLINK_AT_COMMAND_FAILED,
-  RCLINK_RX_TIMEOUT,
-  RCLINK_TX_TIMEOUT,
-  RCLINK_TX_DELIVERY_FAILED,
-  RCLINK_TRANSMITTER_INIT_FAILED,
-} rclink_err_t;
+  RFLINK__SUCCESS = 0,
+  RFLINK__UNEXPECTED_MODEM_STATUS,
+  RFLINK__NETWORK_RESET_FAILED,
+  RFLINK__AT_COMMAND_RESPONSE_TIMEOUT,
+  RFLINK__UNEXPECTED_AT_COMMAND,
+  RFLINK__AT_COMMAND_FAILED,
+  RFLINK__RX_TIMEOUT,
+  RFLINK__TX_TIMEOUT,
+  RFLINK__TX_DELIVERY_FAILED,
+  RFLINK__TRANSMITTER_INIT_FAILED,
+} rflink_err_t;
 
 
+/** @addtogroup group_rflink
+ *  @{
+ */
 /** the size of the response data didn't fit into the frame */
-#define AT_COMMAND_RESPONSE_PAYLOAD_TOO_LARGE 0x80
+#define RFLINK__AT_COMMAND_RESPONSE_PAYLOAD_TOO_LARGE 0x80
 /** maximum size   */
-#define AT_COMMAND_RESPONSE_MAX_DATA_LENGTH 64
+#define RFLINK__AT_COMMAND_RESPONSE_MAX_DATA_LENGTH 64
 
 /** user the is required to provide buffers of this size */
-#define MIN_RX_BUF_SIZE (sizeof(struct zb_rx_response))
+#define RFLINK__MIN_RX_BUF_SIZE (sizeof(struct zb_rx_response))
 
 /** the size of the response data didn't fit into the frame */
-#define ZB_RX_RESPONSE_PAYLOAD_TOO_LARGE 0x80
+#define RFLINK__ZB_RX_RESPONSE_PAYLOAD_TOO_LARGE 0x80
 
-
-#define NETWORK_RESET_TIMEOUT TIME_MS_TO_OS_TICKS(5000)
-#define INIT_TIMEOUT TIME_MS_TO_OS_TICKS(5000)
-#define AT_COMMAND_TIMEOUT TIME_MS_TO_OS_TICKS(100)
-
+/** maximum time to wait for the network reset to complete */
+#define RFLINK__NETWORK_RESET_TIMEOUT TIME_MS_TO_OS_TICKS(5000)
+/** maximum time to wait for link initialization */
+#define RFLINK__INIT_TIMEOUT TIME_MS_TO_OS_TICKS(5000)
+/** maximum time to wait for AT command to complete */
+#define RFLINK__AT_COMMAND_TIMEOUT TIME_MS_TO_OS_TICKS(100)
 
 /** Magic number that identifies the receiver */
-#define RX_ID 0xdeadbeef
+#define RFLINK__RX_ID 0xdeadbeef
+/** @} */
 
 /**
- * Describes an initialized RClink between transmitter and receiver
+ * Describes an initialized RF-link between transmitter and receiver.
  */
-struct rclink {
+struct rflink {
   /** all xbee related objects */
   void *xbee;
   /** ensure mutual access to the XBee device */
@@ -80,13 +91,13 @@ struct rclink {
 /**
  * Describes AT command response
  */
-struct at_command_response {
+struct rflink__at_command_response {
   /** frame ID that identifies the original AT command request frame */
   uint8_t frame_id;
   /** AT command associated with this response */
   uint8_t command[2];
-  /** 
-   * status - see XBee.h for possible AT command statuses 
+  /**
+   * status - see XBee.h for possible AT command statuses
    *
    * In addition, the status AT_COMMAND_RESPONSE_PAYLOAD_TOO_LARGE
    * denotes that the data payload didn't fit into this response
@@ -103,14 +114,14 @@ struct at_command_response {
 /**
  * Describes the Zigbee receive response
  */
-struct zb_rx_response {
+struct rflink__zb_rx_response {
   /** 64 bit address (MSB) */
   uint32_t address64_msb;
   /** 64 bit address (LSB) */
   uint32_t address64_lsb;
   /** 16 bit address */
   uint16_t address16;
-  /** 
+  /**
    * see XBee.h for possible receive options
    *
    * In addition, ZB_RX_RESPONSE_PAYLOAD_TOO_LARGE denotes data that
@@ -125,20 +136,20 @@ struct zb_rx_response {
 
 
 /** Describes the receiver ID packet */
-struct rclink_receiver_id {
+struct rflink__receiver_id {
   uint32_t id;
 };
 
 
 /**
- * Creates a new instace of the rclink
+ * Creates a new instace of the rflink
  *
  * @param *xbee_uart - uart used for communicating with the XBee
  * device
  *
- * @return new rclink instance or NULL upon failure
+ * @return new rflink instance or NULL upon failure
  */
-struct rclink* rclink_new(struct uart *xbee_uart);
+struct rflink* rflink__new(struct uart *xbee_uart);
 
 
 /**
@@ -149,9 +160,9 @@ struct rclink* rclink_new(struct uart *xbee_uart);
  *
  * @param *self - this RC link instance
  *
- * @return RCLINK_SUCCESS if it has been successfully initialized
+ * @return RFLINK_SUCCESS if it has been successfully initialized
  */
-int rclink_init_transmitter(struct rclink *self);
+int rflink__init_transmitter(struct rflink *self);
 
 
 /**
@@ -161,9 +172,9 @@ int rclink_init_transmitter(struct rclink *self);
  * @param *rssi - output parameter - received signal strength value in
  * dBm
  *
- * @return RCLINK_SUCCESS if rssi value has been read successfully
+ * @return RFLINK__SUCCESS if rssi value has been read successfully
  */
-int rclink_get_rssi(struct rclink *self, int *rssi);
+int rflink__get_rssi(struct rflink *self, int *rssi);
 
 
 /**
@@ -175,10 +186,10 @@ int rclink_get_rssi(struct rclink *self, int *rssi);
  * channel. Valid range is 0x0b-0x1a. A value of 0 indicates that the
  * device has not joined any network.
  *
- * @return RCLINK_SUCCESS if the current channel value has been read
+ * @return RFLINK_SUCCESS if the current channel value has been read
  * successfully
  */
-int rclink_get_channel(struct rclink *self, int *channel);
+int rflink__get_channel(struct rflink *self, int *channel);
 
 
 /**
@@ -189,7 +200,7 @@ int rclink_get_channel(struct rclink *self, int *channel);
  *
  * @param *self - this RC link instance
  */
-void rclink_handle_rx_frame(struct rclink *self);
+void rflink__handle_rx_frame(struct rflink *self);
 
 
 /**
@@ -199,9 +210,9 @@ void rclink_handle_rx_frame(struct rclink *self);
  * @param *buf - buffer of at least MIN_RX_BUF_SIZE for receiving the data
  * @param timeout - time out for the Rx operation
  *
- * @return RCLINK_SUCCESS when data has been successfully sent
+ * @return RFLINK_SUCCESS when data has been successfully sent
  */
-int rclink_recv(struct rclink *self, void *buf, portTickType timeout);
+int rflink__recv(struct rflink *self, void *buf, portTickType timeout);
 
 
 /**
@@ -214,10 +225,10 @@ int rclink_recv(struct rclink *self, void *buf, portTickType timeout);
  * @param *delivery_status - optional output parameter - contains
  * delivery status from the link layer
  *
- * @return RCLINK_SUCCESS when data has been successfully sent
+ * @return RFLINK_SUCCESS when data has been successfully sent
  */
-int rclink_send(struct rclink *self, const void *buf, size_t len,
-		portTickType timeout, uint8_t *delivery_status);
+int rflink__send(struct rflink *self, const void *buf, size_t len,
+		 portTickType timeout, uint8_t *delivery_status);
 
 
 /**
@@ -227,9 +238,9 @@ int rclink_send(struct rclink *self, const void *buf, size_t len,
  *
  * @return pointer to the data payload
  */
-static inline void* rclink_get_response_payload(void *buf)
+static inline void* rflink__get_response_payload(void *buf)
 {
-  return (void*)((struct zb_rx_response*)buf)->data;
+  return (void*)((struct rflink__zb_rx_response*)buf)->data;
 }
 
 
@@ -240,9 +251,9 @@ static inline void* rclink_get_response_payload(void *buf)
  *
  * @return length of the received data
  */
-static inline size_t rclink_get_response_payload_length(void *buf)
+static inline size_t rflink__get_response_payload_length(void *buf)
 {
-  return ((struct zb_rx_response*)buf)->data_length;
+  return ((struct rflink__zb_rx_response*)buf)->data_length;
 }
 
-#endif /* _RCLINK_H_ */
+#endif /* _RFLINK_H_ */
