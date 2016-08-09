@@ -2,3 +2,6 @@ Import('env')
 
 env.FeatureSConscript(dirs=['multiplex'],
                       is_enabled=env['CONFIG'].LIB_RC_MULTIPLEX)
+
+env.FeatureSConscript(dirs=['jeti'],
+                      is_enabled=env['CONFIG'].LIB_RC_JETI)
