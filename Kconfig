@@ -15,4 +15,10 @@ config LIB_RC_JETI
        default n
        ---help---
           Support for decoding serial RC channel data in UDI12/16 format.
+
+config LIB_RC_SERVO
+       bool "Servo control"
+       default n
+       ---help---
+          Support for servo control algorithms
 endmenu

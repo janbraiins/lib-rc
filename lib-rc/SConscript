@@ -5,3 +5,6 @@ env.FeatureSConscript(dirs=['multiplex'],
 
 env.FeatureSConscript(dirs=['jeti'],
                       is_enabled=env['CONFIG'].LIB_RC_JETI)
+
+env.FeatureSConscript(dirs=['servo'],
+                      is_enabled=env['CONFIG'].LIB_RC_SERVO)
