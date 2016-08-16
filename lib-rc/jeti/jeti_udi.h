@@ -69,6 +69,8 @@ struct jeti_udi {
    * positions on time, something must be going wrong (e.g. broken RF
    * link) */
   QueueHandle_t servo_channels_queue;
+  /* Last snapshot of servo positions */
+  struct rc_channels last_servo_positions;
 
   /** statistics to keep track of how many servo position frames had
    * to be dropped since the reader didn't fetch them */

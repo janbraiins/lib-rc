@@ -198,7 +198,8 @@ void jeti_udi__rx_task(struct jeti_udi *self)
     if (xQueueSend(self->servo_channels_queue, &servo_positions, 0) != pdPASS) {
       self->drop_count++;
     }
-
+    /* Provide it also as the last servo positions */
+    memcpy(&self->last_servo_positions, &servo_positions, sizeof(servo_positions));
   }
 }
 
