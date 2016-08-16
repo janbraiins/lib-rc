@@ -1,0 +1,13 @@
+menu "lib-rc"
+config LIB_RC_RC_CHANNELS_MAX_COUNT
+       int "Maximum number of RC channels"
+       default 12
+
+config LIB_RC_MULTIPLEX
+       bool "Multiplex radios"
+       default n
+       ---help---
+          Support for decoding serial data with channel values from
+	  the transmitter module (not PPM support!)
+
+endmenu
