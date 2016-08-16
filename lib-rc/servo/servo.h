@@ -39,6 +39,13 @@ struct servo {
 	/** offset int ticks is calculated for SERVO__MAX_PULSE_US (converted to
 	 * ticks) and the requested max_pulse position (see server__new()) */
   int offset;
+
+  /** Clamping limit - maximum pulse length in ticks (we increase
+   * SERVO__MAX_PULSE_US by 10 %) */
+  unsigned long max_pulse_ticks;
+  /** Clamping limit - minimum pulse length in ticks (we decrease
+   * SERVO__MIN_PULSE_US by 10 %) */
+  unsigned long min_pulse_ticks;
 };
 
 

@@ -42,6 +42,11 @@ int servo__init(struct servo *self, pwm__id_t pwm_id,
   self->offset = TIME__US_TO_TICKS(SERVO__MAX_PULSE_US, base_clock_hz) -
                  ((self->slope_numerator * max_pulse) / self->slope_denominator);
 
+  self->max_pulse_ticks = TIME__US_TO_TICKS((SERVO__MAX_PULSE_US * 11)/10,
+                                            base_clock_hz);
+  self->min_pulse_ticks = TIME__US_TO_TICKS((SERVO__MIN_PULSE_US * 9)/10,
+                                            base_clock_hz);
+
   retval = pwm__init(&self->pwm, pwm_id, pwm_config);
 
   if (retval != E_OK) {
@@ -68,10 +73,11 @@ void servo__set_position(struct servo *self, int channel_position)
     (self->slope_numerator * channel_position) / self->slope_denominator +
     self->offset;
 
-  if (ticks > 5250)
-    ticks = 5250;
-  else if (ticks < 2625)
-    ticks = 2625;
+  /* Clamp the max/min ticks */
+  if (ticks > self->max_pulse_ticks)
+    ticks = self->max_pulse_ticks;
+  else if (ticks < self->min_pulse_ticks)
+    ticks = self->min_pulse_ticks;
 
   pwm__set_duty(&self->pwm, ticks);
 }
