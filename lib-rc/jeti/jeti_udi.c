@@ -16,8 +16,12 @@
 #include <lib-rtos/error.h>
 #include <lib-rtos/byteorder/byteorder.h>
 
+#include <lib-algorithms/crc/crc.h>
+
 /* lib-cobjs includes */
 #include <lib-cobjs/cobjs.h>
+
+#include <lib-rc/jeti/crc16_ccit.h>
 
 /** @addtogroup group_jeti_udi
  *  @{
@@ -27,8 +31,8 @@
  */
 #define JETI_UDI__BAUD 115200
 
-
-#define JETI_UDI__MAX_CHANNELS JETI_UDI__16
+/* Maximum number of SERVO channels */
+#define JETI_UDI__MAX_CHANNELS 16
 
 /** The queue for storing servo positions is 1 element deep - this is
  * sufficient since no buffering is needed. Any servo position frames,
@@ -36,8 +40,8 @@
 #define JETI_UDI__SERVO_CHANNELS_QUEUE_LENGTH 1
 /** @} */
 
-#if (CONFIG_LIB_RC_RC_CHANNELS_MAX_COUNT < jeti_udi__16)
-#error The number of configured RC channels (CONFIG_LIB_RC_RC_CHANNELS_MAX_COUNT) is not sufficient for Royal Evo9 support!
+#if (CONFIG_LIB_RC_RC_CHANNELS_MAX_COUNT < JETI_UDI__MAX_CHANNELS)
+#error CONFIG_LIB_RC_RC_CHANNELS_MAX_COUNT too small for JETI UDI support
 #endif
 
 /**
@@ -129,6 +133,7 @@ int jeti_udi__init(struct jeti_udi *self, uart__id_t uart_id,
     retval = E_FAIL;
     goto init_failed;
   }
+  crc__init(&self->crc, &crc16_ccit);
 
  init_failed:
   return retval;
@@ -142,8 +147,8 @@ void jeti_udi__rx_task(struct jeti_udi *self)
   /* normalized values of all servo positions that will get sent for
    * further processing */
   struct rc_channels servo_positions;
-  int i, j;
-  uint16_t crc;
+  int i;
+  unsigned long crc_result;
 
   memset(&channel_info, 0, sizeof(channel_info));
 #if 0
@@ -162,22 +167,10 @@ void jeti_udi__rx_task(struct jeti_udi *self)
 	     sizeof(struct jeti_udi__12_channel_info) -
          sizeof(channel_info.u.s.manufacturer_id));
 #endif
-  // TODO: rework to use the lib-algorithms implementation
-  crc = 0xffff;
-  for(i = 0; i < 25; i++) {
-    crc = crc ^ channel_info.u1.payload[i] << 8;
-    for(j = 0; j < 8; j++) {
-      if(crc & 0x8000) {
-        crc = crc << 1 ^ 0x1021;
-      }
-      else {
-        crc = crc << 1;
-      }
-    }
-  }
-#if 0
-  if (crc == byteorder__be16_to_cpu(channel_info.crc16)) {
-#endif
+  crc__reset(&self->crc);
+  crc__add_block(&self->crc, channel_info.u1.payload, 25);
+  crc_result = crc__get_result(&self->crc);
+  if (crc_result == (unsigned long)byteorder__be16_to_cpu(channel_info.crc16)) {
     /* Convert servo positions to native signed 16-bit format */
     for (i = 0; i < JETI_UDI__12; i++) {
       uint16_t channel = byteorder__be16_to_cpu(channel_info.u1.s.u
@@ -190,9 +183,8 @@ void jeti_udi__rx_task(struct jeti_udi *self)
 #endif
       rc_channels__set(&servo_positions, i, ((int16_t)channel) - (int16_t)
                                                                    0x800);
-#if 0
     }
-#endif
+
     /* post the servo positions for further processing or just mark it
      * as dropped */
     if (xQueueSend(self->servo_channels_queue, &servo_positions, 0) != pdPASS) {

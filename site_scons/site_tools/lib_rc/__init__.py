@@ -9,7 +9,7 @@
    Copyright (c) 2016 Braiins Systems s.r.o.
 """
 import os
-import importlib
+
 
 def generate(env):
     """Set build environment so that this project is also available to
@@ -18,8 +18,10 @@ def generate(env):
     config = env['CONFIG']
 
 
-    env.Append(CPPPATH=[config.LIB_RC_DIR])
-
+    env.Append(CPPPATH=[config.LIB_RC_DIR,
+                        # Extend search path for generated files under the build directory
+                        os.path.join('#$VARIANT_DIR',
+                                     os.path.basename(config.LIB_RC_DIR))])
 
 def exists(env):
     return 1

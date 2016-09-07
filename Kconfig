@@ -14,7 +14,14 @@ config LIB_RC_JETI
        bool "JETI radios"
        default n
        ---help---
-          Support for decoding serial RC channel data in UDI12/16 format.
+          Support for JETI radios
+
+config LIB_RC_JETI_UDI
+       bool "UDI protocol"
+       depends on LIB_RC_JETI
+       default n
+       ---help---
+          Support for decoding serial RC channel data in UDI format.
 
 config LIB_RC_SERVO
        bool "Servo control"

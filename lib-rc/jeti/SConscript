@@ -1,3 +1,13 @@
 Import('env')
+from lib_algorithms.crc.crc import Crc
+from lib_algorithms.crc.codegen.gen_crc import CrcDescriptor
 
-env.FeatureObject(source=['jeti_udi.c'])
+if env['CONFIG'].LIB_RC_JETI_UDI:
+    env.CrcDescriptorHeaderAndObject([CrcDescriptor('CRC16-CCIT',
+                                                    Crc(polynom=0x1021, order=16,
+                                                        init_value=0,
+                                                        final_crc_xor=0,
+                                                        bit_reverse_result=False,
+                                                        lsb_first=False)),
+                                      ])
+    env.FeatureObject(source=['jeti_udi.c'])

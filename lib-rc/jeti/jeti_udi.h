@@ -16,6 +16,7 @@
 
 /* lib-rc includes */
 #include <lib-rc/rc_channels.h>
+#include <lib-algorithms/crc/crc.h>
 
 #include <task.h>
 
@@ -75,6 +76,9 @@ struct jeti_udi {
   /** statistics to keep track of how many servo position frames had
    * to be dropped since the reader didn't fetch them */
   unsigned long drop_count;
+
+  /** CRC calculator (initialized with CRC16-CCIT descriptor) */
+  struct crc crc;
 };
 
 
