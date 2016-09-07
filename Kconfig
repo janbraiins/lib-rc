@@ -23,6 +23,20 @@ config LIB_RC_JETI_UDI
        ---help---
           Support for decoding serial RC channel data in UDI format.
 
+config LIB_RC_JETI_EXBUS
+       bool "EXBUS protocol"
+       depends on LIB_RC_JETI
+       default n
+       ---help---
+          Support for EXBUS protocol (precise RC channel data, telemetry uplink, JETIBOX interface etc.)
+
+config LIB_RC_JETI_EX_TELEMETRY
+       bool "EX Telemetry protocol"
+       depends on LIB_RC_JETI
+       default n
+       ---help---
+          Support for EX Telemetry protocol
+
 config LIB_RC_SERVO
        bool "Servo control"
        default n

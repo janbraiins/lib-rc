@@ -11,3 +11,25 @@ if env['CONFIG'].LIB_RC_JETI_UDI:
                                                         lsb_first=False)),
                                       ])
     env.FeatureObject(source=['jeti_udi.c'])
+
+
+if env['CONFIG'].LIB_RC_JETI_EXBUS:
+    env.CrcDescriptorHeaderAndObject([CrcDescriptor('CRC16-CCIT-LSB',
+                                                    Crc(polynom=0x1021, order=16,
+                                                        init_value=0,
+                                                        final_crc_xor=0,
+                                                        bit_reverse_result=False,
+                                                        lsb_first=True)),
+                                      ])
+    env.FeatureObject(source=['jeti_exbus.c'])
+
+
+if env['CONFIG'].LIB_RC_JETI_EX_TELEMETRY:
+    env.CrcDescriptorHeaderAndObject([CrcDescriptor('CRC8-CCIT',
+                                                    Crc(polynom=0x7, order=8,
+                                                        init_value=0,
+                                                        final_crc_xor=0,
+                                                        bit_reverse_result=False,
+                                                        lsb_first=False)),
+                                      ])
+    env.FeatureObject(source=['jeti_ex.c'])
