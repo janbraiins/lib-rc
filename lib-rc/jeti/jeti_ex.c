@@ -368,7 +368,12 @@ int jeti_ex__create_message(struct jeti_ex *self, jeti_ex__msg_type_t msg_type,
   size_t msg_buf_space_left;
   size_t payload_idx = 0;
   struct jeti_ex__message *msg = (struct jeti_ex__message*)msg_buf;
-
+  /* At least message header and CRC has to fit into the provided message
+   * buffer*/
+  if (msg_buf_len < (sizeof(msg->header) + 1)) {
+    retval = E_NO_MEM;
+    goto no_mem;
+  }
   /* Allocate space for the header in the buffer */
   msg_buf_space_left = msg_buf_len - sizeof(msg->header);
 
@@ -395,10 +400,6 @@ int jeti_ex__create_message(struct jeti_ex *self, jeti_ex__msg_type_t msg_type,
   }
   /* We should always have space for CRC since the loop has been
    * terminated early enough */
-  if (payload_idx >= msg_buf_space_left) {
-    retval = E_NO_MEM;
-    goto no_mem;
-  }
   /* All sensors have been serialized, we can now fill in the header */
   jeti_ex__set_ex_header(self, &msg->header, msg_type, payload_idx);
 
