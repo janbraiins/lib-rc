@@ -56,7 +56,7 @@ struct jeti_ex_sensor {
     .unit = unit_str,						    \
     .unit_len = sizeof(unit_str) - 1,     			    \
     .data_type = type,	         				    \
-    .decimal_point_mask = decimal_point << 5, \
+    .decimal_point_mask = decimal_point << 5,			    \
   }
 
 
