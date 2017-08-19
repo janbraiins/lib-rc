@@ -59,6 +59,11 @@ struct jeti_ex_sensor {
     .decimal_point_mask = decimal_point << 5,			    \
   }
 
+/**
+ * Compound literal for the sensor descriptor
+ */
+#define JETI_EX_SENSOR__DESCR(...) \
+  (const struct jeti_ex_sensor__descr)JETI_EX_SENSOR__DESCR_INIT(__VA_ARGS__)
 
 /**
  * Creates new instance and initializes communication with the
